@@ -327,6 +327,35 @@ function makeThickWheel(cx, cy, rOuter, rInner, zCenter, depth, color, name, rim
         addQuadLocal(inA2, outA2, outB2, inB2, rimColor);
     }
 
+    // add thin white stripes on the tire so rotation is visible
+    var stripeColor = vec4(0.95,0.95,0.95,1.0);
+    var stripeArc = Math.PI / 20.0;
+    var stripeAngles = [0, Math.PI];
+    var stripeInner = rOuter - (rOuter - rInner) * 0.18;
+    for(var sa=0; sa<stripeAngles.length; sa++){
+        var base = stripeAngles[sa];
+        var aStart = base - stripeArc * 0.5;
+        var aEnd = base + stripeArc * 0.5;
+
+        var frontOuterA = vec4(cx + rOuter*Math.cos(aStart), cy + rOuter*Math.sin(aStart), z0 + 0.0006, 1);
+        var frontOuterB = vec4(cx + rOuter*Math.cos(aEnd),   cy + rOuter*Math.sin(aEnd),   z0 + 0.0006, 1);
+        var frontInnerB = vec4(cx + stripeInner*Math.cos(aEnd), cy + stripeInner*Math.sin(aEnd), z0 + 0.0006, 1);
+        var frontInnerA = vec4(cx + stripeInner*Math.cos(aStart), cy + stripeInner*Math.sin(aStart), z0 + 0.0006, 1);
+        addQuadLocal(frontInnerA, frontOuterA, frontOuterB, frontInnerB, stripeColor);
+
+        var backOuterA = vec4(cx + rOuter*Math.cos(aStart), cy + rOuter*Math.sin(aStart), z1 - 0.0006, 1);
+        var backOuterB = vec4(cx + rOuter*Math.cos(aEnd),   cy + rOuter*Math.sin(aEnd),   z1 - 0.0006, 1);
+        var backInnerB = vec4(cx + stripeInner*Math.cos(aEnd), cy + stripeInner*Math.sin(aEnd), z1 - 0.0006, 1);
+        var backInnerA = vec4(cx + stripeInner*Math.cos(aStart), cy + stripeInner*Math.sin(aStart), z1 - 0.0006, 1);
+        addQuadLocal(backInnerA, backInnerB, backOuterB, backOuterA, stripeColor);
+
+        var sideOuterA = vec4(cx + rOuter*Math.cos(aStart), cy + rOuter*Math.sin(aStart), z0 + 0.0006, 1);
+        var sideOuterB = vec4(cx + rOuter*Math.cos(aEnd),   cy + rOuter*Math.sin(aEnd),   z0 + 0.0006, 1);
+        var sideOuterBBack = vec4(cx + rOuter*Math.cos(aEnd),   cy + rOuter*Math.sin(aEnd),   z1 - 0.0006, 1);
+        var sideOuterABack = vec4(cx + rOuter*Math.cos(aStart), cy + rOuter*Math.sin(aStart), z1 - 0.0006, 1);
+        addQuadLocal(sideOuterA, sideOuterB, sideOuterBBack, sideOuterABack, stripeColor);
+    }
+
     meshes[name] = { start: start, count: points.length - start, center: vec3(cx, cy, zCenter) };
 }
 
@@ -597,13 +626,13 @@ function render() {
             deltaHeadingRad = (travelScaled * Math.tan(steerRad)) / wheelbase;
         }
 
-        // update heading (store in degrees because rotateY expects degrees elsewhere)
-        bikeHeading += deltaHeadingRad * 180.0 / Math.PI;
+    // update heading (store in degrees because rotateY expects degrees elsewhere)
+    bikeHeading += deltaHeadingRad * 180.0 / Math.PI;
 
-        // update position using combined frame + steer direction so motion follows the handlebar
-        var effectiveHeading = radians(bikeHeading) + steerRad;
-        bikeX += Math.cos(effectiveHeading) * travelScaled;
-        bikeZ += Math.sin(effectiveHeading) * travelScaled;
+    // hierarchical motion: root frame moves using its updated heading (steer influences heading delta above)
+    var headingRad = radians(bikeHeading);
+    bikeX += Math.cos(headingRad) * travelScaled;
+    bikeZ += Math.sin(headingRad) * travelScaled;
     }
 
     // bind buffers and attributes
@@ -659,8 +688,9 @@ function render() {
             gl.drawArrays(gl.TRIANGLES, meshes['forkRight'].start, meshes['forkRight'].count);
         }
 
-        // Front wheel stays attached to fork; no spin so it will not drift from the frame
-        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
+    // Front wheel rotates around its own axle after steering transform
+    var frontWheelModel = mult(steerOnly, mult(translate(c2[0], c2[1], c2[2]), mult(rotateZ(-wheelAngle), translate(-c2[0], -c2[1], -c2[2]))));
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(frontWheelModel));
         gl.drawArrays(gl.TRIANGLES, meshes['frontWheel'].start, meshes['frontWheel'].count);
 
         if(meshes['stem']){
