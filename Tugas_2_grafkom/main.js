@@ -377,6 +377,30 @@ function makeTubeBetween(x0,y0,x1,y1,zCenter,thickness,depth,color,name) {
     makeRotatedBox(cx, cy, len, thickness, zCenter, depth, angle, color, name);
 }
 
+// create a box centered at (cx, cy) in XY, with size (width, height)
+// and extruded along Z from z0 to z1
+function makeZBox(cx, cy, width, height, z0, z1, color, name) {
+    var start = points.length;
+    var hw = width/2.0, hh = height/2.0;
+    var x0 = cx - hw, x1 = cx + hw;
+    var y0 = cy - hh, y1 = cy + hh;
+    
+    var a = vec4(x0,y0,z0,1), b = vec4(x1,y0,z0,1), c = vec4(x1,y1,z0,1), d = vec4(x0,y1,z0,1);
+    var a2 = vec4(x0,y0,z1,1), b2 = vec4(x1,y0,z1,1), c2 = vec4(x1,y1,z1,1), d2 = vec4(x0,y1,z1,1);
+    
+    // "Front" face (at z0)
+    addQuadLocal(a,b,c,d,color);
+    // "Back" face (at z1)
+    addQuadLocal(a2,d2,c2,b2,color); // reversed winding
+    // Sides
+    addQuadLocal(a,a2,b2,b,color); // Bottom
+    addQuadLocal(b,b2,c2,c,color); // Right
+    addQuadLocal(c,c2,d2,d,color); // Top
+    addQuadLocal(d,d2,a2,a,color); // Left
+    
+    meshes[name] = { start: start, count: points.length - start, center: vec3(cx,cy,(z0+z1)/2) };
+}
+
 function makeRect(x0,y0,x1,y1,z,color,name) {
     var start = points.length;
     var a = vec4(x0,y0,z,1);
@@ -391,69 +415,95 @@ function createBike() {
     points.length = 0; colors.length = 0; texcoords.length = 0; meshes = {};
     // debug marker: a small visible box at origin to verify rendering pipeline
     makeBox(-0.12, -0.12, 0.12, 0.12, 0.0, 0.02, vec4(0.8,0.2,0.2,1.0), 'debugMarker');
-    // thicker frame built from tubes to approximate the reference
-    // reference points
-    var rearHub = { x: -0.5, y: -0.25 };
-    var frontHub = { x: 0.5, y: -0.25 };
-    var bb = { x: 0.0, y: 0.0 }; // bottom bracket / pedal center
-    var seatTop = { x: -0.12, y: 0.18 };
-    var head = { x: 0.45, y: 0.08 };
+    
+    // Poin referensi baru yang telah diperbaiki:
+    var rearHub = { x: -0.6, y: 0.0 };   // Poros roda belakang (di y=0)
+    var frontHub = { x: 0.6, y: 0.0 };  // Poros roda depan (di y=0)
+    var bb = { x: -0.1, y: -0.05 };  // Bottom bracket (pedal), sedikit di Bawah poros roda
+    var seatTop = { x: -0.25, y: 0.4 }; // Atas seat tube, miring ke belakang
+    var head = { x: 0.4, y: 0.38 };    // Titik hubung fork/stem (head tube atas)
 
     // top tube (seatTop -> head)
-    makeTubeBetween(seatTop.x, seatTop.y, head.x, head.y, 0.04, 0.04, 0.06, vec4(0.12,0.12,0.14,1.0), 'topTube');
+    makeTubeBetween(seatTop.x, seatTop.y, head.x, head.y, 0, 0.04, 0.06, vec4(0.12,0.12,0.14,1.0), 'topTube');
     // down tube (head -> bottom bracket)
-    makeTubeBetween(head.x, head.y - 0.02, bb.x, bb.y, 0.02, 0.05, 0.06, vec4(0.12,0.12,0.14,1.0), 'downTube');
+    makeTubeBetween(head.x, head.y - 0.02, bb.x, bb.y, 0, 0.05, 0.06, vec4(0.12,0.12,0.14,1.0), 'downTube');
     // seat tube (seatTop -> bottom bracket)
-    makeTubeBetween(seatTop.x, seatTop.y, bb.x, bb.y, 0.03, 0.04, 0.06, vec4(0.12,0.12,0.14,1.0), 'seatTube');
+    makeTubeBetween(seatTop.x + 0.02, seatTop.y, bb.x, bb.y, 0, 0.04, 0.06, vec4(0.12,0.12,0.14,1.0), 'seatTube');
 
     // chainstay (bottom bracket -> rear hub)
-    makeTubeBetween(bb.x, bb.y, rearHub.x, rearHub.y, -0.02, 0.04, 0.06, vec4(0.12,0.12,0.14,1.0), 'chainstay');
+    makeTubeBetween(bb.x, bb.y, rearHub.x, rearHub.y, 0, 0.04, 0.06, vec4(0.12,0.12,0.14,1.0), 'chainstay');
 
     // seat stays (two thin tubes from seatTop to rear hub)
-    makeTubeBetween(seatTop.x + 0.02, seatTop.y - 0.02, rearHub.x + 0.02, rearHub.y + 0.02, 0.03, 0.02, 0.04, vec4(0.12,0.12,0.14,1.0), 'seatStay1');
-    makeTubeBetween(seatTop.x - 0.02, seatTop.y - 0.02, rearHub.x - 0.02, rearHub.y + 0.02, 0.03, 0.02, 0.04, vec4(0.12,0.12,0.14,1.0), 'seatStay2');
+    makeTubeBetween(seatTop.x + 0.02, seatTop.y - 0.02, rearHub.x + 0.02, rearHub.y + 0.02, 0.04, 0.02, 0.04, vec4(0.12,0,0,1.0), 'seatStay1');
+    makeTubeBetween(seatTop.x + 0.02, seatTop.y - 0.02, rearHub.x + 0.02, rearHub.y + 0.02, -0.04, 0.02, 0.04, vec4(0.12,0,0,1.0), 'seatStay2');
 
     // fork legs (two thin tubes from head down to front hub)
-    makeTubeBetween(head.x - 0.02, head.y - 0.02, frontHub.x - 0.01, frontHub.y + 0.02, 0.03, 0.03, 0.06, vec4(0.12,0.12,0.14,1.0), 'forkLeft');
-    makeTubeBetween(head.x + 0.02, head.y - 0.02, frontHub.x + 0.01, frontHub.y + 0.02, 0.03, 0.03, 0.06, vec4(0.12,0.12,0.14,1.0), 'forkRight');
+    makeTubeBetween(head.x + 0.02, head.y - 0.02, frontHub.x + 0.01, frontHub.y + 0.02, 0.04, 0.03, 0.04, vec4(0.12,0.12,0.14,1.0), 'forkLeft');
+    makeTubeBetween(head.x + 0.02, head.y - 0.02, frontHub.x + 0.01, frontHub.y + 0.02, -0.04, 0.03, 0.04, vec4(0.12,0.12,0.14,1.0), 'forkRight');
 
     // small head tube box for a nicer join
-    makeBox(head.x - 0.05, head.y - 0.03, head.x + 0.05, head.y + 0.07, 0.03, 0.06, vec4(0.14,0.14,0.16,1.0), 'headTube');
+    makeBox(head.x - 0.05, head.y - 0.03, head.x + 0.05, head.y + 0.07, 0, 0.06, vec4(0.14,0.14,0.16,1.0), 'headTube');
 
     // stem: vertical connector from head tube up to handlebar center (will rotate with steering)
-    makeBox(head.x - 0.02, head.y + 0.04, head.x + 0.02, head.y + 0.14, 0.05, 0.04, vec4(0.11,0.11,0.13,1.0), 'stem');
+    makeBox(head.x - 0.02, head.y + 0.04, head.x + 0.02, head.y + 0.14, 0, 0.04, vec4(0.11,0.11,0.13,1.0), 'stem');
 
     // saddle: narrower and centered directly above the seat tube
-    makeRotatedBox(seatTop.x, seatTop.y + 0.06, 0.18, 0.06, 0.06, 0.04, -6, vec4(0.05,0.05,0.05,1.0), 'saddle');
+    makeRotatedBox(seatTop.x, seatTop.y + 0.06, 0.18, 0.06, 0, 0.04, -6, vec4(0.05,0.05,0.05,1.0), 'saddle');
+
+    
+    // ======================================================
+    // === BLOK PEDAL (CRANK) BARU ===
+    // ======================================================
+    // Mendefinisikan crank arm dan pedal di LOCAL SPACE (relatif ke 0,0,0)
+    // Matriks di 'render' akan memindahkannya ke posisi 'bb' (bottom bracket)
+    
+    var crankL = 0.17; // Panjang crank arm dari pusat ke pedal
 
     // pedals / crank center as a short thick box (bottom bracket)
-    makeBox(bb.x - 0.04, bb.y - 0.04, bb.x + 0.04, bb.y + 0.04, 0.02, 0.04, vec4(0.18,0.18,0.18,1.0), 'pedalCenter');
-    // crank arms (two thin rods) — will rotate with pedalModel in render
-    makeRotatedBox(-0.14, 0.0, 0.28, 0.02, 0.02, 0.03, 0, vec4(0.9,0.6,0.05,1.0), 'crankLeft');
-    makeRotatedBox(0.14, 0.0, 0.28, 0.02, 0.02, 0.03, 0, vec4(0.9,0.6,0.05,1.0), 'crankRight');
+    // Dibuat di (0,0,0) dan akan ditranslasi ke 'bb' di render
+    makeBox(-0.04, -0.04, 0.04, 0.04, 0.0, 0.08, vec4(0.18,0.18,0.18,1.0), 'pedalCenter');
+    
+    // crank arms (two thin rods)
+    // 'crankLeft' berpusat di (-crankL/2) sehingga membentang dari -crankL ke 0
+    makeRotatedBox(-crankL/2, 0.0, crankL, 0.02, -0.04, 0.03, 0, vec4(0.7,0.7,0.7,1.0), 'crankLeft');
+    // 'crankRight' berpusat di (crankL/2) sehingga membentang dari 0 ke +crankL
+    makeRotatedBox( crankL/2, 0.0, crankL, 0.02,  0.04, 0.03, 0, vec4(0.7,0.7,0.7,1.0), 'crankRight');
+
+    // Platform Pedal Asli (Boks datar)
+    // Dibuat di (0,0,0) dan akan ditranslasi ke ujung crank + di-counter-rotate di render
+    var pedalWidth = 0.08, pedalHeight = 0.04, pedalDepth = 0.02;
+    var pedalColor = vec4(0.1, 0.1, 0.1, 1.0);
+    makeBox(-pedalWidth/2, -pedalHeight/2, pedalWidth/2, pedalHeight/2, -0.03, pedalDepth, pedalColor, 'pedalLeft');
+    makeBox(-pedalWidth/2, -pedalHeight/2, pedalWidth/2, pedalHeight/2, +0.03, pedalDepth, pedalColor, 'pedalRight');
+    // ======================================================
+    // === AKHIR BLOK PEDAL BARU ===
+    // ======================================================
+
 
     // thicker wheels (outer radius, inner rim radius, z center, depth)
-    // add wheels: pass rimColor (silver) for visible velg
     var rimSilver = vec4(0.75,0.75,0.78,1.0);
-    makeThickWheel(rearHub.x, rearHub.y, 0.34, 0.25, 0.0, 0.08, vec4(0.05,0.05,0.05,1.0), 'rearWheel', rimSilver);
-    makeThickWheel(frontHub.x, frontHub.y, 0.34, 0.25, 0.0, 0.08, vec4(0.05,0.05,0.05,1.0), 'frontWheel', rimSilver);
+    makeThickWheel(rearHub.x, rearHub.y, 0.34, 0.25, 0.0, 0.03, vec4(0.05,0.05,0.05,1.0), 'rearWheel', rimSilver);
+    makeThickWheel(frontHub.x, frontHub.y, 0.34, 0.25, 0.0, 0.03, vec4(0.05,0.05,0.05,1.0), 'frontWheel', rimSilver);
 
-    // realistic handlebar: left and right arms attached to stem top (use head/stem position)
-    var hbCenter = { x: head.x, y: head.y + 0.14 };
-    var leftEnd = { x: hbCenter.x - 0.16, y: hbCenter.y };
-    var rightEnd = { x: hbCenter.x + 0.16, y: hbCenter.y };
-    // split each arm into inner straight segment and outer bent segment to simulate slight curvature
-    var leftMid = { x: hbCenter.x - 0.08, y: hbCenter.y - 0.01 };
-    var rightMid = { x: hbCenter.x + 0.08, y: hbCenter.y - 0.01 };
-    // inner segments (near stem)
-    makeTubeBetween(hbCenter.x, hbCenter.y, leftMid.x, leftMid.y, 0.06, 0.02, 0.03, vec4(0.12,0.12,0.12,1.0), 'leftBar1');
-    makeTubeBetween(hbCenter.x, hbCenter.y, rightMid.x, rightMid.y, 0.06, 0.02, 0.03, vec4(0.12,0.12,0.12,1.0), 'rightBar1');
-    // outer bent segments (toward grips) slightly lower in Z to suggest downward sweep
-    makeTubeBetween(leftMid.x, leftMid.y, leftEnd.x, leftEnd.y, 0.055, 0.02, 0.03, vec4(0.12,0.12,0.12,1.0), 'leftBar2');
-    makeTubeBetween(rightMid.x, rightMid.y, rightEnd.x, rightEnd.y, 0.055, 0.02, 0.03, vec4(0.12,0.12,0.12,1.0), 'rightBar2');
-    // grips at ends (more horizontal)
-    makeRotatedBox(leftEnd.x, leftEnd.y, 0.09, 0.03, 0.06, 0.04, -4, vec4(0.02,0.02,0.02,1.0), 'gripLeft');
-    makeRotatedBox(rightEnd.x, rightEnd.y, 0.09, 0.03, 0.06, 0.04, -4, vec4(0.02,0.02,0.02,1.0), 'gripRight');
+    
+    // ======================================================
+    // === BLOK STANG (HANDLEBAR) BARU ===
+    // ======================================================
+    var hbCenter = { x: head.x, y: head.y + 0.14 }; // Titik tengah stang (di atas stem)
+    var barThickness = 0.02;  // Ketebalan stang
+    var gripThickness = 0.03; // Ketebalan grip
+    var barZ_near = 0.03;     // Pangkal stang dekat stem
+    var barZ_far = 0.25;      // Ujung stang tempat grip mulai
+    var gripZ_end = 0.35;     // Ujung grip
+    var sweepBack = 0.03; // Seberapa jauh stang 'menyapu' ke belakang (di sumbu X)
+    makeZBox(hbCenter.x, hbCenter.y, barThickness, barThickness, barZ_near, barZ_far, vec4(0.12,0.12,0.12,1.0), 'rightBar1');
+    makeZBox(hbCenter.x, hbCenter.y, barThickness, barThickness, -barZ_near, -barZ_far, vec4(0.12,0.12,0.12,1.0), 'leftBar1');
+    makeZBox(hbCenter.x - sweepBack, hbCenter.y, gripThickness, gripThickness, barZ_far, gripZ_end, vec4(0.02,0.02,0.02,1.0), 'gripRight');
+    makeZBox(hbCenter.x - sweepBack, hbCenter.y, gripThickness, gripThickness, -barZ_far, -gripZ_end, vec4(0.02,0.02,0.02,1.0), 'gripLeft');
+    // ======================================================
+    // === AKHIR BLOK STANG BARU ===
+    // ======================================================
+
 
     // rear cog (small disk/box at rear hub) and a simple chain connecting BB to rear hub
     makeRotatedBox(rearHub.x, rearHub.y, 0.06, 0.06, 0.02, 0.03, 0, vec4(0.06,0.06,0.06,1.0), 'rearCog');
@@ -596,12 +646,10 @@ function render() {
 
     // draw front wheel and steering-linked parts (steer affects fork, handlebar, grips, and front wheel spin)
     if(meshes['frontWheel']){
-    var c2 = meshes['frontWheel'].center;
-    // compute steering pivot: use headTube center (top of stem) if available, otherwise fall back to wheel center
-    var headCenter = (meshes['headTube'] && meshes['headTube'].center) ? meshes['headTube'].center : c2;
-    // steer-only transform rotates around head/stem pivot so bars/fork pivot correctly
-    var steerOnly = mult(bikeBase, mult(translate(headCenter[0], headCenter[1], headCenter[2]), mult(rotateY(steerAngle), translate(-headCenter[0], -headCenter[1], -headCenter[2]))));
-        // draw fork legs attached to steering
+        var c2 = meshes['frontWheel'].center;
+        var headCenter = (meshes['headTube'] && meshes['headTube'].center) ? meshes['headTube'].center : c2;
+        var steerOnly = mult(bikeBase, mult(translate(headCenter[0], headCenter[1], headCenter[2]), mult(rotateY(steerAngle), translate(-headCenter[0], -headCenter[1], -headCenter[2]))));
+        
         if(meshes['forkLeft']){
             gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
             gl.drawArrays(gl.TRIANGLES, meshes['forkLeft'].start, meshes['forkLeft'].count);
@@ -611,73 +659,87 @@ function render() {
             gl.drawArrays(gl.TRIANGLES, meshes['forkRight'].start, meshes['forkRight'].count);
         }
 
-        // front wheel (apply spin after steering)
         var frontModel = mult(steerOnly, mult(rotateZ(-wheelAngle), mat4()));
         gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(frontModel));
         gl.drawArrays(gl.TRIANGLES, meshes['frontWheel'].start, meshes['frontWheel'].count);
 
-        // draw handlebar and grips using the steering-only transform (no wheel spin)
-            // draw stem (rotates with steering)
-            if(meshes['stem']){
-                gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
-                gl.drawArrays(gl.TRIANGLES, meshes['stem'].start, meshes['stem'].count);
-            }
-            // draw left/right handlebar arm segments with a slight pitch tilt
-            if(meshes['leftBar1']){
-                var lbCenter1 = meshes['leftBar1'].center;
-                var lbTilt1 = mult(steerOnly, mult(translate(lbCenter1[0], lbCenter1[1], lbCenter1[2]), mult(rotateX(-6), translate(-lbCenter1[0], -lbCenter1[1], -lbCenter1[2]))));
-                gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(lbTilt1));
-                gl.drawArrays(gl.TRIANGLES, meshes['leftBar1'].start, meshes['leftBar1'].count);
-            }
-            if(meshes['leftBar2']){
-                var lbCenter2 = meshes['leftBar2'].center;
-                var lbTilt2 = mult(steerOnly, mult(translate(lbCenter2[0], lbCenter2[1], lbCenter2[2]), mult(rotateX(-6), translate(-lbCenter2[0], -lbCenter2[1], -lbCenter2[2]))));
-                gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(lbTilt2));
-                gl.drawArrays(gl.TRIANGLES, meshes['leftBar2'].start, meshes['leftBar2'].count);
-            }
-            if(meshes['rightBar1']){
-                var rbCenter1 = meshes['rightBar1'].center;
-                var rbTilt1 = mult(steerOnly, mult(translate(rbCenter1[0], rbCenter1[1], rbCenter1[2]), mult(rotateX(-6), translate(-rbCenter1[0], -rbCenter1[1], -rbCenter1[2]))));
-                gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(rbTilt1));
-                gl.drawArrays(gl.TRIANGLES, meshes['rightBar1'].start, meshes['rightBar1'].count);
-            }
-            if(meshes['rightBar2']){
-                var rbCenter2 = meshes['rightBar2'].center;
-                var rbTilt2 = mult(steerOnly, mult(translate(rbCenter2[0], rbCenter2[1], rbCenter2[2]), mult(rotateX(-6), translate(-rbCenter2[0], -rbCenter2[1], -rbCenter2[2]))));
-                gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(rbTilt2));
-                gl.drawArrays(gl.TRIANGLES, meshes['rightBar2'].start, meshes['rightBar2'].count);
-            }
-            // grips: draw each with a slightly stronger pitch so they point slightly downward
-            if(meshes['gripLeft']){
-                var g = meshes['gripLeft'].center;
-                    var gTransform = mult(steerOnly, mult(translate(g[0], g[1], g[2]), mult(rotateX(-4), translate(-g[0], -g[1], -g[2]))));
-                gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(gTransform));
-                gl.drawArrays(gl.TRIANGLES, meshes['gripLeft'].start, meshes['gripLeft'].count);
-            }
-            if(meshes['gripRight']){
-                var g2 = meshes['gripRight'].center;
-                    var g2Transform = mult(steerOnly, mult(translate(g2[0], g2[1], g2[2]), mult(rotateX(-4), translate(-g2[0], -g2[1], -g2[2]))));
-                gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(g2Transform));
-                gl.drawArrays(gl.TRIANGLES, meshes['gripRight'].start, meshes['gripRight'].count);
-            }
+        if(meshes['stem']){
+            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
+            gl.drawArrays(gl.TRIANGLES, meshes['stem'].start, meshes['stem'].count);
+        }
+        if(meshes['leftBar1']){
+            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
+            gl.drawArrays(gl.TRIANGLES, meshes['leftBar1'].start, meshes['leftBar1'].count);
+        }
+        if(meshes['rightBar1']){
+            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
+            gl.drawArrays(gl.TRIANGLES, meshes['rightBar1'].start, meshes['rightBar1'].count);
+        }
+        if(meshes['gripLeft']){
+            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
+            gl.drawArrays(gl.TRIANGLES, meshes['gripLeft'].start, meshes['gripLeft'].count);
+        }
+        if(meshes['gripRight']){
+            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
+            gl.drawArrays(gl.TRIANGLES, meshes['gripRight'].start, meshes['gripRight'].count);
+        }
     }
 
-    // draw pedals (rotate)
+    // ======================================================
+    // === BLOK GAMBAR PEDAL BARU ===
+    // ======================================================
+    
+    // Ambil pivot (Bottom Bracket) dari data bb
+    var bb = { x: -0.1, y: -0.05 }; // Pastikan ini SAMA dengan di createBike!
+    var pedalPivot = vec3(bb.x, bb.y, 0.0);
+    var crankL = 0.17; // Pastikan ini SAMA dengan di createBike!
+    var angleRad = radians(pedalAngle);
+    var c = Math.cos(angleRad), s = Math.sin(angleRad);
+
+    // 1. Model untuk Crank (berputar penuh)
+    // Pindahkan ke pivot, lalu putar
+    var crankModel = mult(bikeBase, mult(translate(pedalPivot[0], pedalPivot[1], pedalPivot[2]), rotateZ(pedalAngle)));
+    
+    // Gambar pedalCenter, crankLeft, crankRight MENGGUNAKAN crankModel
     if(meshes['pedalCenter']){
-        var pc = meshes['pedalCenter'].center || vec3(0,0,0);
-        var pedalModel = mult(bikeBase, mult(translate(pc[0], pc[1], pc[2]), mult(rotateZ(pedalAngle), translate(-pc[0], -pc[1], -pc[2]))));
-        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(pedalModel));
+        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(crankModel));
         gl.drawArrays(gl.TRIANGLES, meshes['pedalCenter'].start, meshes['pedalCenter'].count);
-        // draw crank arms with the same pedal rotation
-        if(meshes['crankLeft']){
-            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(pedalModel));
-            gl.drawArrays(gl.TRIANGLES, meshes['crankLeft'].start, meshes['crankLeft'].count);
-        }
-        if(meshes['crankRight']){
-            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(pedalModel));
-            gl.drawArrays(gl.TRIANGLES, meshes['crankRight'].start, meshes['crankRight'].count);
-        }
     }
+    if(meshes['crankLeft']){
+        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(crankModel));
+        gl.drawArrays(gl.TRIANGLES, meshes['crankLeft'].start, meshes['crankLeft'].count);
+    }
+    if(meshes['crankRight']){
+        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(crankModel));
+        gl.drawArrays(gl.TRIANGLES, meshes['crankRight'].start, meshes['crankRight'].count);
+    }
+
+    // 2. Model untuk Platform Pedal (tetap horizontal)
+    // Hitung posisi UJUNG crank arm yang berputar
+    var rightPedalPos = vec3(crankL * c, crankL * s, 0.03); // z=0.03 (sisi kanan)
+    var leftPedalPos = vec3(-crankL * c, -crankL * s, -0.03); // z=-0.03 (sisi kiri)
+
+    // Buat matriks yang mentranslasi ke ujung crank DAN melakukan counter-rotate
+    var rightPedalModel = mult(bikeBase, 
+                             mult(translate(pedalPivot[0] + rightPedalPos[0], pedalPivot[1] + rightPedalPos[1], pedalPivot[2] + rightPedalPos[2]), 
+                                  rotateZ(-pedalAngle))); // rotasi balik
+    
+    var leftPedalModel = mult(bikeBase, 
+                            mult(translate(pedalPivot[0] + leftPedalPos[0], pedalPivot[1] + leftPedalPos[1], pedalPivot[2] + leftPedalPos[2]), 
+                                 rotateZ(-pedalAngle))); // rotasi balik
+    
+    // Gambar platform pedal MENGGUNAKAN modelnya masing-masing
+    if(meshes['pedalLeft']){
+        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(leftPedalModel));
+        gl.drawArrays(gl.TRIANGLES, meshes['pedalLeft'].start, meshes['pedalLeft'].count);
+    }
+    if(meshes['pedalRight']){
+        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(rightPedalModel));
+        gl.drawArrays(gl.TRIANGLES, meshes['pedalRight'].start, meshes['pedalRight'].count);
+    }
+    // ======================================================
+    // === AKHIR BLOK GAMBAR PEDAL BARU ===
+    // ======================================================
 
     requestAnimationFrame(render);
 }
