@@ -579,7 +579,7 @@ function render() {
         wheelAngle += wheelDeltaDeg;
 
         // Convert wheel delta to linear travel: s = r * theta (theta in radians)
-        var wheelRadius = 0.295; // average of outer/inner radii used when creating thick wheel (0.34/0.25)
+    var wheelRadius = 0.295; // average of outer/inner radii used when creating thick wheel (0.34/0.25)
         var wheelDeltaRad = radians(wheelDeltaDeg);
         var travel = wheelRadius * wheelDeltaRad;
         // scale travel to pleasant speed
@@ -600,10 +600,10 @@ function render() {
         // update heading (store in degrees because rotateY expects degrees elsewhere)
         bikeHeading += deltaHeadingRad * 180.0 / Math.PI;
 
-        // update position in world X,Z using heading (0 deg => facing -Z)
-        var headingRad = radians(bikeHeading);
-        bikeX += Math.sin(headingRad) * travelScaled;
-        bikeZ += -Math.cos(headingRad) * travelScaled;
+        // update position using combined frame + steer direction so motion follows the handlebar
+        var effectiveHeading = radians(bikeHeading) + steerRad;
+        bikeX += Math.cos(effectiveHeading) * travelScaled;
+        bikeZ += Math.sin(effectiveHeading) * travelScaled;
     }
 
     // bind buffers and attributes
@@ -659,8 +659,8 @@ function render() {
             gl.drawArrays(gl.TRIANGLES, meshes['forkRight'].start, meshes['forkRight'].count);
         }
 
-        var frontModel = mult(steerOnly, mult(rotateZ(-wheelAngle), mat4()));
-        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(frontModel));
+        // Front wheel stays attached to fork; no spin so it will not drift from the frame
+        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(steerOnly));
         gl.drawArrays(gl.TRIANGLES, meshes['frontWheel'].start, meshes['frontWheel'].count);
 
         if(meshes['stem']){
