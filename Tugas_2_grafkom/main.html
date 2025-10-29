@@ -14,6 +14,8 @@
     label { width:95px; font-size:13px }
     input[type="range"] { flex:1; }
     button { padding:6px 8px; font-size:13px }
+    .reference-photo { display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:12px; }
+    .reference-photo img { max-width:320px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.12); }
   </style>
 </head>
 <body>
@@ -129,6 +131,22 @@
       <input id="animateToggle" type="checkbox" />
     </div>
   </div>
+</div>
+
+<div class="reference-photo">
+  <strong>Referensi Sepeda</strong>
+  <img src="foto_sepeda.jpg" alt="Foto referensi sepeda" />
+  <strong>gambar tree</strong>
+  <img src="foto_tree_hierarichal.jpg" alt="Foto referensi sepeda" />
+  <div style="font-size:13px; margin-top:6px; text-align:left;">
+    <strong>Hierarki Sepeda</strong>
+    <div>Parent: Body Sepeda</div>
+    <div style="margin-left:14px;">Child: Stang (sib: Roda Belakang, Pedal)</div>
+    <div style="margin-left:14px;">Child: Roda Belakang (sib: Stang, Pedal)</div>
+    <div style="margin-left:14px;">Child: Pedal (sib: Stang, Roda Belakang)</div>
+    <div style="margin-left:28px;">Stang → Child: Roda Depan</div>
+  </div>
+
 </div>
 
 <!-- Vertex shader -->

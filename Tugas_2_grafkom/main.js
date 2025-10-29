@@ -623,16 +623,17 @@ function render() {
         }
         var deltaHeadingRad = 0.0;
         if (Math.abs(steerRad) > 1e-5) {
-            deltaHeadingRad = (travelScaled * Math.tan(steerRad)) / wheelbase;
+            deltaHeadingRad = -(travelScaled * Math.tan(steerRad)) / wheelbase;
         }
 
     // update heading (store in degrees because rotateY expects degrees elsewhere)
     bikeHeading += deltaHeadingRad * 180.0 / Math.PI;
 
-    // hierarchical motion: root frame moves using its updated heading (steer influences heading delta above)
+    // move along the steered direction so the handlebar immediately dictates travel
     var headingRad = radians(bikeHeading);
-    bikeX += Math.cos(headingRad) * travelScaled;
-    bikeZ += Math.sin(headingRad) * travelScaled;
+    var effectiveHeading = headingRad + steerRad;
+    bikeX += Math.cos(effectiveHeading) * travelScaled;
+    bikeZ += Math.sin(effectiveHeading) * travelScaled;
     }
 
     // bind buffers and attributes
