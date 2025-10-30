@@ -137,7 +137,7 @@ window.onload = function init() {
         document.getElementById("transX").value = 0;
         document.getElementById("transY").value = 0;
         document.getElementById("transZ").value = -4;
-    document.getElementById("scale").value = 1;
+        document.getElementById("scale").value = 1;
         document.getElementById("camX").value = 0;
         document.getElementById("camY").value = 0;
         document.getElementById("camZ").value = 5;
@@ -147,7 +147,7 @@ window.onload = function init() {
         document.getElementById("lightX").value = 2;
         document.getElementById("lightY").value = 2;
         document.getElementById("lightZ").value = 2;
-    createBike();
+        createBike();
         updateBuffers();
     // reset bike controls
     document.getElementById('pedalSpeed').value = 0;
@@ -449,7 +449,7 @@ function createBike() {
     var rearHub = { x: -0.6, y: 0.0 };   // Poros roda belakang (di y=0)
     var frontHub = { x: 0.6, y: 0.0 };  // Poros roda depan (di y=0)
     var bb = { x: -0.1, y: -0.05 };  // Bottom bracket (pedal), sedikit di Bawah poros roda
-    var seatTop = { x: -0.25, y: 0.4 }; // Atas seat tube, miring ke belakang
+    var seatTop = { x: -0.25, y: 0.35 }; // Atas seat tube, miring ke belakang
     var head = { x: 0.4, y: 0.38 };    // Titik hubung fork/stem (head tube atas)
 
     // top tube (seatTop -> head)
@@ -463,8 +463,8 @@ function createBike() {
     makeTubeBetween(bb.x, bb.y, rearHub.x, rearHub.y, 0, 0.04, 0.06, vec4(0.12,0.12,0.14,1.0), 'chainstay');
 
     // seat stays (two thin tubes from seatTop to rear hub)
-    makeTubeBetween(seatTop.x + 0.02, seatTop.y - 0.02, rearHub.x + 0.02, rearHub.y + 0.02, 0.04, 0.02, 0.04, vec4(0.12,0,0,1.0), 'seatStay1');
-    makeTubeBetween(seatTop.x + 0.02, seatTop.y - 0.02, rearHub.x + 0.02, rearHub.y + 0.02, -0.04, 0.02, 0.04, vec4(0.12,0,0,1.0), 'seatStay2');
+    makeTubeBetween(seatTop.x + 0.02, seatTop.y - 0.02, rearHub.x + 0.02, rearHub.y + 0, 0.04, 0.02, 0.04, vec4(0.12,0,0,1.0), 'seatStay1');
+    makeTubeBetween(seatTop.x + 0.02, seatTop.y - 0.02, rearHub.x + 0.02, rearHub.y + 0, -0.04, 0.02, 0.04, vec4(0.12,0,0,1.0), 'seatStay2');
 
     // fork legs (two thin tubes from head down to front hub)
     makeTubeBetween(head.x + 0.02, head.y - 0.02, frontHub.x + 0.01, frontHub.y + 0.02, 0.04, 0.03, 0.04, vec4(0.12,0.12,0.14,1.0), 'forkLeft');
@@ -480,44 +480,30 @@ function createBike() {
     makeRotatedBox(seatTop.x, seatTop.y + 0.06, 0.18, 0.06, 0, 0.04, -6, vec4(0.05,0.05,0.05,1.0), 'saddle');
 
     
-    // ======================================================
-    // === BLOK PEDAL (CRANK) BARU ===
-    // ======================================================
+    
     // Mendefinisikan crank arm dan pedal di LOCAL SPACE (relatif ke 0,0,0)
-    // Matriks di 'render' akan memindahkannya ke posisi 'bb' (bottom bracket)
     
     var crankL = 0.17; // Panjang crank arm dari pusat ke pedal
 
     // pedals / crank center as a short thick box (bottom bracket)
-    // Dibuat di (0,0,0) dan akan ditranslasi ke 'bb' di render
     makeBox(-0.04, -0.04, 0.04, 0.04, 0.0, 0.08, vec4(0.18,0.18,0.18,1.0), 'pedalCenter');
     
     // crank arms (two thin rods)
-    // 'crankLeft' berpusat di (-crankL/2) sehingga membentang dari -crankL ke 0
     makeRotatedBox(-crankL/2, 0.0, crankL, 0.02, -0.04, 0.03, 0, vec4(0.7,0.7,0.7,1.0), 'crankLeft');
     // 'crankRight' berpusat di (crankL/2) sehingga membentang dari 0 ke +crankL
     makeRotatedBox( crankL/2, 0.0, crankL, 0.02,  0.04, 0.03, 0, vec4(0.7,0.7,0.7,1.0), 'crankRight');
 
     // Platform Pedal Asli (Boks datar)
-    // Dibuat di (0,0,0) dan akan ditranslasi ke ujung crank + di-counter-rotate di render
     var pedalWidth = 0.08, pedalHeight = 0.04, pedalDepth = 0.02;
     var pedalColor = vec4(0.1, 0.1, 0.1, 1.0);
     makeBox(-pedalWidth/2, -pedalHeight/2, pedalWidth/2, pedalHeight/2, -0.03, pedalDepth, pedalColor, 'pedalLeft');
     makeBox(-pedalWidth/2, -pedalHeight/2, pedalWidth/2, pedalHeight/2, +0.03, pedalDepth, pedalColor, 'pedalRight');
-    // ======================================================
-    // === AKHIR BLOK PEDAL BARU ===
-    // ======================================================
-
 
     // thicker wheels (outer radius, inner rim radius, z center, depth)
     var rimSilver = vec4(0.75,0.75,0.78,1.0);
     makeThickWheel(rearHub.x, rearHub.y, 0.34, 0.25, 0.0, 0.03, vec4(0.05,0.05,0.05,1.0), 'rearWheel', rimSilver);
     makeThickWheel(frontHub.x, frontHub.y, 0.34, 0.25, 0.0, 0.03, vec4(0.05,0.05,0.05,1.0), 'frontWheel', rimSilver);
 
-    
-    // ======================================================
-    // === BLOK STANG (HANDLEBAR) BARU ===
-    // ======================================================
     var hbCenter = { x: head.x, y: head.y + 0.14 }; // Titik tengah stang (di atas stem)
     var barThickness = 0.02;  // Ketebalan stang
     var gripThickness = 0.03; // Ketebalan grip
@@ -529,10 +515,6 @@ function createBike() {
     makeZBox(hbCenter.x, hbCenter.y, barThickness, barThickness, -barZ_near, -barZ_far, vec4(0.12,0.12,0.12,1.0), 'leftBar1');
     makeZBox(hbCenter.x - sweepBack, hbCenter.y, gripThickness, gripThickness, barZ_far, gripZ_end, vec4(0.02,0.02,0.02,1.0), 'gripRight');
     makeZBox(hbCenter.x - sweepBack, hbCenter.y, gripThickness, gripThickness, -barZ_far, -gripZ_end, vec4(0.02,0.02,0.02,1.0), 'gripLeft');
-    // ======================================================
-    // === AKHIR BLOK STANG BARU ===
-    // ======================================================
-
 
     // rear cog (small disk/box at rear hub) and a simple chain connecting BB to rear hub
     makeRotatedBox(rearHub.x, rearHub.y, 0.06, 0.06, 0.02, 0.03, 0, vec4(0.06,0.06,0.06,1.0), 'rearCog');
@@ -716,10 +698,6 @@ function render() {
         }
     }
 
-    // ======================================================
-    // === BLOK GAMBAR PEDAL BARU ===
-    // ======================================================
-    
     // Ambil pivot (Bottom Bracket) dari data bb
     var bb = { x: -0.1, y: -0.05 }; // Pastikan ini SAMA dengan di createBike!
     var pedalPivot = vec3(bb.x, bb.y, 0.0);
@@ -729,7 +707,7 @@ function render() {
 
     // 1. Model untuk Crank (berputar penuh)
     // Pindahkan ke pivot, lalu putar
-    var crankModel = mult(bikeBase, mult(translate(pedalPivot[0], pedalPivot[1], pedalPivot[2]), rotateZ(pedalAngle)));
+    var crankModel = mult(bikeBase, mult(translate(pedalPivot[0], pedalPivot[1], pedalPivot[2]), rotateZ(-pedalAngle)));
     
     // Gambar pedalCenter, crankLeft, crankRight MENGGUNAKAN crankModel
     if(meshes['pedalCenter']){
@@ -745,10 +723,9 @@ function render() {
         gl.drawArrays(gl.TRIANGLES, meshes['crankRight'].start, meshes['crankRight'].count);
     }
 
-    // 2. Model untuk Platform Pedal (tetap horizontal)
     // Hitung posisi UJUNG crank arm yang berputar
-    var rightPedalPos = vec3(crankL * c, crankL * s, 0.03); // z=0.03 (sisi kanan)
-    var leftPedalPos = vec3(-crankL * c, -crankL * s, -0.03); // z=-0.03 (sisi kiri)
+    var rightPedalPos = vec3(crankL * c, -crankL * s, 0.03); // z=0.03 (sisi kanan)
+    var leftPedalPos = vec3(-crankL * c, crankL * s, -0.03); // z=-0.03 (sisi kiri)
 
     // Buat matriks yang mentranslasi ke ujung crank DAN melakukan counter-rotate
     var rightPedalModel = mult(bikeBase, 
@@ -768,9 +745,5 @@ function render() {
         gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(rightPedalModel));
         gl.drawArrays(gl.TRIANGLES, meshes['pedalRight'].start, meshes['pedalRight'].count);
     }
-    // ======================================================
-    // === AKHIR BLOK GAMBAR PEDAL BARU ===
-    // ======================================================
-
     requestAnimationFrame(render);
 }
